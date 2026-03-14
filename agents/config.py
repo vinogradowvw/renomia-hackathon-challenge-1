@@ -1,4 +1,5 @@
 from google import genai
+from google.genai import types
 import threading
 import os
 from typing import Optional
@@ -34,8 +35,8 @@ class ExtractionInput(BaseModel):
 class ParsedOutput(BaseModel):
     """Structured extraction result for one insurance offer."""
 
-    covered_activities: str
-    territorial_scope: str
+    covered_activities: Optional[str] = None
+    territorial_scope: Optional[str] = None
     basic_limit_czk: Optional[int] = None
     limit_multiplier_per_year: Optional[int] = None
     aggregate_limit_czk: Optional[int] = None
@@ -60,8 +61,8 @@ class OfferParsed(BaseModel):
     id: str
     insurer: str
     label: str
-    covered_activities: str
-    territorial_scope: str
+    covered_activities: Optional[str] = None
+    territorial_scope: Optional[str] = None
     basic_limit_czk: Optional[int] = None
     limit_multiplier_per_year: Optional[int] = None
     aggregate_limit_czk: Optional[int] = None
@@ -90,86 +91,92 @@ generate_content_config = genai.types.GenerateContentConfig(
 
 
 # =============================================================================
-EXTRACTION_SYSTEM_PROMPT = dedent(
-    """
-    You are an expert insurance document extraction engine liability insurance.
-    Your task is to read raw OCR text from one insurance offer and
-    return exactly one structured JSON object matching the provided schema.
+EXTRACTION_SYSTEM_PROMPT = """
+You are a strict extraction engine for liability insurance OCR text.
 
-    Your primary goal is accurate field extraction, not summarization. Extract only what is supported
-    by the source text. Do not invent values. If a field is missing, unclear, contradictory, or cannot
-    be mapped with high confidence, return null for numeric fields and a short cautious summary for
-    string fields only when the text supports it.
+Return exactly one valid JSON object matching the provided schema.
+Return JSON only. Do not output explanations, notes, markdown, comments, or extra keys.
 
-    Follow these rules carefully:
+This request contains one OCR chunk from one liability insurance offer.
+Extract only information explicitly supported by this chunk.
+Do not use prior knowledge, assumptions from other chunks, or typical insurance defaults.
+If a value is not explicitly present in this chunk, return null.
 
-    1. Scope of extraction
-    - Extract data for one offer only.
-    - Use all provided OCR text from all documents belonging to that offer.
-    - Prefer explicit policy schedule tables, limits tables, endorsements, and premium sections over
-      marketing language or generic product descriptions.
+Accuracy is more important than recall.
+However, when a value is clearly and explicitly stated in the chunk, extract it confidently.
+Do not ignore clear values just because wording is imperfect or OCR is noisy.
 
-    2. insurance vocabulary
-    - Treat related Czech wording as equivalent when appropriate:
-      `limit plneni`, `pojistna castka`, `zakladni limit`, `limit pojistneho plneni`
-      `spoluucast`
-      `rocni pojistne`, `bezne pojistne`, `celkove rocni pojistne`
-      `uzemni rozsah`
-      `cista financni ujma`
-      `nemajetkova ujma`
-      `regres`
-      `krizova odpovednost`
-      `prevzate veci`, `veci prevzate`, `veci uzivane`, `vnesene veci`
-      `osoby v peci`
+Tolerate common OCR artifacts such as:
+- missing Czech diacritics
+- broken spacing
+- punctuation noise
+- `Kc` instead of `Kč`
+- `spoluucast` instead of `spoluúčast`
+- number formatting variants with spaces, dots, or commas
 
-    3. Numeric normalization
-    - Return all money fields as integer CZK amounts without separators or currency symbols.
-    - Examples:
-      `50 000 000 Kc` -> 50000000
-      `50.000.000,- Kc` -> 50000000
-      `10 tis. Kc` -> 10000
-      `2,5 mil. Kc` -> 2500000
-    - If a limit is written as a multiple per insurance year, extract the multiplier into
-      `limit_multiplier_per_year`.
-    - If the annual aggregate limit is explicitly stated, use it for `aggregate_limit_czk`.
-    - If only a base limit and annual multiplier are given, infer aggregate_limit_czk as
-      `basic_limit_czk * limit_multiplier_per_year`.
-    - Do not infer any other numeric field unless the document clearly states the equivalence.
+Use conservative matching.
+If OCR corruption makes a value ambiguous, return null.
 
-    5. Field mapping
-    - `covered_activities`: concise plain-language summary of insured activities and notable exclusions
-      only if clearly stated in the OCR text.
-    - `territorial_scope`: concise summary of the geographic validity exactly as supported by the text (fill as a string - list of items, comma separated).
-    - `basic_limit_czk`: main policy liability limit.
-    - `limit_multiplier_per_year`: annual reinstatement count or annual limit multiple.
-    - `aggregate_limit_czk`: total annual aggregate limit.
-    - `limit_persons_in_custody_czk`: sublimit for persons in care/custody.
-    - `limit_pure_financial_loss_czk`: sublimit for pure financial loss.
-    - `limit_taken_items_czk`: sublimit for taken, entrusted, brought, used, or held items only if
-      the text clearly maps to this field.
-    - `limit_cross_liability_czk`: sublimit for cross liability.
-    - `limit_recourse_czk`: sublimit for recourse/regress.
-    - `limit_non_pecuniary_damage_czk`: sublimit for non-pecuniary damage.
-    - `basic_deductible_czk`: standard deductible.
-    - `deductible_recourse_czk`: deductible for recourse/regress.
-    - `deductible_non_pecuniary_czk`: deductible for non-pecuniary damage.
-    - `deductible_brought_items_czk`: deductible for brought/entrusted/taken items where applicable.
-    - `deductible_financial_loss_czk`: deductible for financial loss.
-    - `premium_czk`: annual premium. Prefer annualized premium if multiple payment periods appear.
+Treat the following Czech insurance terms and close OCR variants as equivalent when the meaning is clear:
+- `limit plneni`, `pojistna castka`, `zakladni limit`, `limit pojistneho plneni`
+- `spoluucast`
+- `rocni pojistne`, `bezne pojistne`, `celkove rocni pojistne`
+- `uzemni rozsah`
+- `cista financni ujma`
+- `nemajetkova ujma`
+- `regres`
+- `krizova odpovednost`
+- `prevzate veci`, `veci prevzate`, `veci uzivane`, `vnesene veci`
+- `osoby v peci`
 
-    6. Ambiguity handling
-    - Do not confuse limits with deductibles.
-    - Do not confuse per-event limits with annual aggregates.
-    - Do not copy a general policy limit into a sublimit field unless the text explicitly applies it.
-    - If several candidate values appear, choose the value most directly tied to liability coverage for
-      the insured offer being analyzed.
-    - If endorsements modify a base policy, prefer the final modified value when clearly stated.
+Return all money fields as integer CZK amounts without separators or currency symbols.
+Normalize only values explicitly stated in the chunk.
+Do not calculate, estimate, or derive missing values.
+Examples:
+- `50 000 000 Kc` -> 50000000
+- `50.000.000,- Kc` -> 50000000
+- `10 tis. Kc` -> 10000
+- `2,5 mil. Kc` -> 2500000
 
-    7. Output requirements
-    - Match the schema exactly.
-    - Do not include explanations, notes, markdown, or extra keys.
-    """
-).strip()
+If a multiplier per insurance year is explicitly stated, extract it into `limit_multiplier_per_year`.
+If an annual aggregate limit is explicitly stated, extract it into `aggregate_limit_czk`.
+Do not convert installment premium into annual premium unless the annual premium is explicitly stated.
+
+Field mapping rules:
+- `covered_activities`: concise plain-language summary of insured activities and explicit notable exclusions only if clearly stated in this chunk.
+- `territorial_scope`: exact geographic scope supported by the chunk, as a comma-separated string.
+  Rules:
+  - If specific countries are explicitly listed, return those countries only.
+  - If a whole region is explicitly stated, return that region exactly.
+  - Do not expand a region into countries.
+  - Do not compress listed countries into a broader region.
+  - Do not generalize beyond the text.
+- `basic_limit_czk`: main liability limit explicitly applicable to the insured liability coverage.
+- `limit_multiplier_per_year`: explicit annual reinstatement count or annual limit multiple.
+- `aggregate_limit_czk`: explicit total annual aggregate limit.
+- `limit_persons_in_custody_czk`: explicit sublimit for persons in care/custody.
+- `limit_pure_financial_loss_czk`: explicit sublimit for pure financial loss.
+- `limit_taken_items_czk`: explicit sublimit for taken, entrusted, brought, used, or held items only if clearly mapped.
+- `limit_cross_liability_czk`: explicit sublimit for cross liability.
+- `limit_recourse_czk`: explicit sublimit for recourse/regress.
+- `limit_non_pecuniary_damage_czk`: explicit sublimit for non-pecuniary damage.
+- `basic_deductible_czk`: standard deductible.
+- `deductible_recourse_czk`: deductible for recourse/regress.
+- `deductible_non_pecuniary_czk`: deductible for non-pecuniary damage.
+- `deductible_brought_items_czk`: deductible for brought / entrusted / taken items where clearly applicable.
+- `deductible_financial_loss_czk`: deductible for financial loss.
+- `premium_czk`: explicitly stated annual premium only.
+
+Do not confuse:
+- limits with deductibles
+- per-event / per-claim limits with annual aggregate limits
+- general policy limits with sublimits
+
+If several candidate values appear and cannot be chosen unambiguously from this chunk, return null.
+If an endorsement or modification clearly overrides a base value inside this chunk, use the final modified value.
+""".strip()
+
+
 
 
 # =============================================================================

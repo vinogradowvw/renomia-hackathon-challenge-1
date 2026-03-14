@@ -8,3 +8,5 @@ pandas==2.2.3
 pydantic==2.12.5
 
 sqlalchemy==2.0.43
+
+google-genai==1.67.0
