@@ -3,6 +3,7 @@ import threading
 import os
 from typing import Optional
 from textwrap import dedent
+from config import config
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -32,8 +33,6 @@ class ExtractionInput(BaseModel):
 
 class ParsedOutput(BaseModel):
     """Structured extraction result for one insurance offer."""
-
-    model_config = ConfigDict(extra="forbid")
 
     covered_activities: str
     territorial_scope: str
@@ -177,31 +176,45 @@ EXTRACTION_SYSTEM_PROMPT = dedent(
 class GeminiTracker:
     """Wrapper around Gemini that tracks token usage."""
 
-    def __init__(self, api_key: str, model_name: str = "gemini-2.0-flash"):
+    def __init__(
+        self,
+        api_key: str,
+        model_name: str = "gemini-2.5-flash",
+        config: types.GenerateContentConfig | None = None,
+    ):
+        print(api_key)
         self.enabled = bool(api_key)
+        self.model_name = model_name
+        self.config = config
+
         if self.enabled:
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel(model_name)
+            self.client = genai.Client(api_key=api_key)
+
         self.prompt_tokens = 0
         self.completion_tokens = 0
         self.total_tokens = 0
         self.request_count = 0
         self._lock = threading.Lock()
 
-    def generate(self, prompt = None, **kwargs):
+    def generate(self, prompt=None, **kwargs):
         if not self.enabled:
             raise RuntimeError("Gemini API key not configured")
-        if prompt is None:
-            response = self.model.generate_content(**kwargs)
-        else:
-            response = self.model.generate_content(prompt, **kwargs)
+
+        response = self.client.models.generate_content(
+            model=self.model_name,
+            config=self.config,
+            **kwargs,
+        )
+
         with self._lock:
             self.request_count += 1
             meta = getattr(response, "usage_metadata", None)
             if meta:
-                self.prompt_tokens += getattr(meta, "prompt_token_count", 0)
-                self.completion_tokens += getattr(meta, "candidates_token_count", 0)
-                self.total_tokens += getattr(meta, "total_token_count", 0)
+                self.prompt_tokens += getattr(meta, "prompt_token_count", 0) or 0
+                self.completion_tokens += getattr(meta, "candidates_token_count", 0) or 0
+                self.total_tokens += getattr(meta, "total_token_count", 0) or 0
+        print(response)
+
         return response
 
     def get_metrics(self):
@@ -220,5 +233,4 @@ class GeminiTracker:
             self.total_tokens = 0
             self.request_count = 0
 
-
-gemini = GeminiTracker(GEMINI_API_KEY)
+gemini = GeminiTracker(GEMINI_API_KEY, config=generate_content_config)

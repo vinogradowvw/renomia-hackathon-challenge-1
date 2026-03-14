@@ -9,6 +9,8 @@ Output: Parsed parameters per offer, ranking, best offer identification
 import os
 import threading
 import time
+from agents.config import ExtractionInput, OfferInput, gemini
+from agents.extraction import parse_offer
 
 import psycopg2
 from fastapi import FastAPI
@@ -23,25 +25,25 @@ DATABASE_URL = os.environ.get(
 def get_db():
     return psycopg2.connect(DATABASE_URL)
 
-@app.on_event("startup")
-def init_db():
-    for _ in range(15):
-        try:
-            conn = get_db()
-            cur = conn.cursor()
-            cur.execute(
-                """CREATE TABLE IF NOT EXISTS cache (
-                    key TEXT PRIMARY KEY,
-                    value JSONB,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-                )"""
-            )
-            conn.commit()
-            cur.close()
-            conn.close()
-            return
-        except Exception:
-            time.sleep(1)
+# @app.on_event("startup")
+# def init_db():
+#     for _ in range(15):
+#         try:
+#             conn = get_db()
+#             cur = conn.cursor()
+#             cur.execute(
+#                 """CREATE TABLE IF NOT EXISTS cache (
+#                     key TEXT PRIMARY KEY,
+#                     value JSONB,
+#                     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+#                 )"""
+#             )
+#             conn.commit()
+#             cur.close()
+#             conn.close()
+#             return
+#         except Exception:
+#             time.sleep(1)
 
 
 @app.get("/")
@@ -120,13 +122,6 @@ def solve(payload: dict):
         "best_offer_id": "csob_1"
     }
     """
-    # TODO: Implement your solution here
-    #
-    # Suggested approach:
-    # 1. For each offer, send OCR text to Gemini to extract structured parameters
-    # 2. Compare offers across all fields
-    # 3. Rank by value (coverage vs. cost vs. deductibles)
-    # 4. Return structured comparison
 
     offers = payload.get("offers", [])
     segment = payload.get("segment", "")
@@ -136,6 +131,21 @@ def solve(payload: dict):
         "ranking": [],
         "best_offer_id": None,
     }
+
+    for offer_payload in offers:
+        extraction_input = ExtractionInput(
+            offer=OfferInput.model_validate(offer_payload),
+            segment=segment,
+        )
+        parsed_offer = parse_offer(extraction_input, gemini)
+        result["offers_parsed"].append(
+            {
+                "id": extraction_input.offer.id,
+                "insurer": extraction_input.offer.insurer,
+                "label": extraction_input.offer.label,
+                **parsed_offer.model_dump(),
+            }
+        )
 
     return result
 
