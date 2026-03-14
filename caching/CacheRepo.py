@@ -28,10 +28,17 @@ class CacheRepo:
     
     def add(self, cache_entry: Cache) -> bool:
         """Save a new response to the cache."""
-        try:
-            self.session.add(cache_entry)
-            # Force INSERT inside this transaction scope to catch PK conflicts.
-            self.session.flush()
-            return True
-        except IntegrityError:
+        if self.if_exists(cache_entry.key):
             return False
+        try:
+            # Isolate conflicts in a savepoint so outer transaction can continue.
+            with self.session.begin_nested():
+                self.session.add(cache_entry)
+                # Force INSERT now to detect PK conflict in this method.
+                self.session.flush()
+            return True
+        except IntegrityError as err:
+            pg_code = getattr(err.orig, "pgcode", None) or getattr(err.orig, "sqlstate", None)
+            if pg_code == "23505":
+                return False
+            raise
