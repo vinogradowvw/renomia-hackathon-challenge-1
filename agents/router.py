@@ -15,9 +15,13 @@ try:
 except ModuleNotFoundError:
     SklearnTfidfVectorizer = None
 
+from agents.config import gemini
 from agents.parsers.coverage_parser import COVERAGE_PARSER_SYSTEM_PROMT
+from agents.parsers.coverage_parser import CoverageParser
 from agents.parsers.deduction_parser import DEDUCTION_PARSER_SYSTEM_PROMT
+from agents.parsers.deduction_parser import DeductionParser
 from agents.parsers.limit_parser import LIMIT_PARSER_SYSTEM_PROMT
+from agents.parsers.limit_parser import LimitParser
 
 
 TOKEN_RE = re.compile(r"[0-9A-Za-zÀ-ÿ]+", re.UNICODE)
@@ -87,8 +91,8 @@ class _FallbackTfidfVectorizer:
 class Router:
     def __init__(
         self,
-        min_similarity: float = 0.05,
-        top_k: int = 5,
+        min_similarity: float = 0.001,
+        top_k: int = 10,
         lemma_language: str = "cs",
     ) -> None:
         self.min_similarity = min_similarity
@@ -104,7 +108,12 @@ class Router:
         self.last_routes: dict[str, list[str]] = {}
         self.last_route_details: dict[str, list[dict[str, Any]]] = {}
 
-    def route(self, chunks: list[str], parsers: list[object]) -> dict[str, list[str]]:
+    def route(
+        self,
+        chunks: list[str],
+        parsers: list[object] | None = None,
+    ) -> dict[str, list[str]]:
+        parsers = parsers or self._default_parsers()
         parser_specs = self._build_parser_specs(parsers)
         if not chunks:
             self.last_routes = {spec["name"]: [] for spec in parser_specs}
@@ -155,10 +164,10 @@ class Router:
     def route_with_scores(
         self,
         chunks: list[str],
-        parsers: list[object],
+        parsers: list[object] | None = None,
     ) -> dict[str, list[dict[str, Any]]]:
-        routes = self.route(chunks, parsers)
-        return routes
+        self.route(chunks, parsers)
+        return self.last_route_details
 
     def _build_vectorizer(self):
         if SklearnTfidfVectorizer is not None:
@@ -177,6 +186,14 @@ class Router:
                 "prompt": self._parser_prompt(parser),
             }
             for parser in parsers
+        ]
+
+    @staticmethod
+    def _default_parsers() -> list[object]:
+        return [
+            LimitParser(gemini),
+            DeductionParser(gemini),
+            CoverageParser(gemini),
         ]
 
     def _parser_name(self, parser: object) -> str:

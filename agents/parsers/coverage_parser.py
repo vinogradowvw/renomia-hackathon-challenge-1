@@ -80,7 +80,12 @@ class CoverageParser:
                     role="user",
                     parts=[types.Part.from_text(text=prompt)],
                 )
-            ]
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=CoverageParsed,
+                temperature=0,
+            ),
         )
         return self.__model_from_response(response)
 

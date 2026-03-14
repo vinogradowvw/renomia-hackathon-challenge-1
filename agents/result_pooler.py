@@ -2,13 +2,17 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from agents.config import ParsedOutput
+from agents.config import ParsedOutput, gemini
+from agents.parsers.coverage_parser import CoverageParser
+from agents.parsers.deduction_parser import DeductionParser
+from agents.parsers.limit_parser import LimitParser
 
 
 class ResultPooler:
     """Runs routed chunks through individual parsers and merges their outputs."""
 
-    def __init__(self, parsers: list[object]) -> None:
+    def __init__(self, parsers: list[object] | None = None) -> None:
+        parsers = parsers or self._default_parsers()
         self.parsers = {
             self._parser_name(parser): parser
             for parser in parsers
@@ -60,3 +64,11 @@ class ResultPooler:
         if isinstance(result, dict):
             return result
         raise TypeError(f"Unsupported parser result type: {type(result).__name__}")
+
+    @staticmethod
+    def _default_parsers() -> list[object]:
+        return [
+            LimitParser(gemini),
+            DeductionParser(gemini),
+            CoverageParser(gemini),
+        ]

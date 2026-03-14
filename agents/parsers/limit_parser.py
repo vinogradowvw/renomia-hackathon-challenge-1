@@ -18,6 +18,7 @@ class LimitsParsed(BaseModel):
     limit_cross_liability_czk: Optional[int] = None
     limit_recourse_czk: Optional[int] = None
     limit_non_pecuniary_damage_czk: Optional[int] = None
+    premium_czk: Optional[int] = None
 
 LIMIT_PARSER_SYSTEM_PROMT = """
 Jsi specializovaný extrakční model pro české dokumenty pojištění odpovědnosti.
@@ -44,6 +45,8 @@ Důležitá pravidla:
 - Pokud údaj není v textu výslovně uveden nebo jej nelze spolehlivě určit, vrať null.
 - Nevymýšlej hodnoty.
 - Nezaměňuj limity se spoluúčastí, pojistným ani jinými částkami.
+- `premium_czk` je částka, kterou klient platí za pojištění, například „pojistné“, „roční pojistné“, „běžné pojistné“ nebo „celkové roční pojistné“.
+- Proto nikdy nepoužívej částku pojistného jako limit plnění ani jako sublimit.
 - Nezaměňuj obecný limit za sublimit, pokud text výslovně neříká, že se vztahuje k danému poli.
 - Pokud dodatky nebo zvláštní ujednání mění původní limit, použij konečnou upravenou hodnotu, pokud je to z textu jasné.
 - Upřednostňuj tabulky limitů, přehledy krytí, dodatky a zvláštní ujednání před obecným popisem produktu.
@@ -62,6 +65,7 @@ Mapování polí:
 Za významově příbuzné nebo ekvivalentní výrazy považuj podle kontextu zejména:
 - „limit plnění“, „limit pojistného plnění“, „pojistná částka“, „základní limit“
 - „roční agregát“, „agregovaný limit“, „celkový roční limit“
+- „pojistné“, „roční pojistné“, „běžné pojistné“, „celkové roční pojistné“ jako výrazy pro premium_czk, nikoli pro limity
 - „čistá finanční újma“
 - „nemajetková újma“
 - „regres“, „regresní nároky“
@@ -113,13 +117,18 @@ class LimitParser:
         prompt = dedent(LIMIT_PARSER_SYSTEM_PROMT + all_chunks).strip()
 
         response = self.gemini.generate(
-                contents=[
-                    types.Content(
-                        role="user",
-                        parts=[types.Part.from_text(text=prompt)],
-                    )
-                ]
-            )
+            contents=[
+                types.Content(
+                    role="user",
+                    parts=[types.Part.from_text(text=prompt)],
+                )
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=LimitsParsed,
+                temperature=0,
+            ),
+        )
         return self.__model_from_response(response)
 
     def __model_from_response(self, response) -> LimitsParsed:

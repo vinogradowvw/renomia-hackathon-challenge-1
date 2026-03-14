@@ -98,7 +98,12 @@ class DeductionParser:
                     role="user",
                     parts=[types.Part.from_text(text=prompt)],
                 )
-            ]
+            ],
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=DeductionsParsed,
+                temperature=0,
+            ),
         )
         return self.__model_from_response(response)
 

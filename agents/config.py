@@ -80,8 +80,6 @@ class OfferParsed(BaseModel):
     premium_czk: Optional[int] = Field(default=None)
 
 
-
-
 generate_content_config = genai.types.GenerateContentConfig(
     response_mime_type="application/json",
     response_schema=ParsedOutput,
@@ -186,7 +184,7 @@ class GeminiTracker:
     def __init__(
         self,
         api_key: str,
-        model_name: str = "gemini-2.5-flash",
+        model_name: str = "gemini-3-flash-preview",
         config: types.GenerateContentConfig | None = None,
     ):
         self.enabled = bool(api_key)
@@ -206,9 +204,11 @@ class GeminiTracker:
         if not self.enabled:
             raise RuntimeError("Gemini API key not configured")
 
+        request_config = kwargs.pop("config", None) or self.config
+
         response = self.client.models.generate_content(
             model=self.model_name,
-            config=self.config,
+            config=request_config,
             **kwargs,
         )
 

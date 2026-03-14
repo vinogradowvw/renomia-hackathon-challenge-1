@@ -9,12 +9,15 @@ Output: Parsed parameters per offer, ranking, best offer identification
 import os
 import threading
 import time
+from agents.result_pooler import ResultPooler
 from agents.config import ExtractionInput, OfferInput, gemini
-from agents.extraction import parse_offer
+from agents.extraction import build_offer_chunks
 
 import psycopg2
 from fastapi import FastAPI
 import uvicorn
+
+from agents.router import Router
 
 app = FastAPI(title="Challenge 1: Insurance Offer Comparison")
 
@@ -132,21 +135,26 @@ def solve(payload: dict):
         "best_offer_id": None,
     }
 
+    router = Router()
+    result_pooler = ResultPooler()
+
     for offer_payload in offers:
         extraction_input = ExtractionInput(
             offer=OfferInput.model_validate(offer_payload),
             segment=segment,
         )
-        parsed_offer = parse_offer(extraction_input, gemini)
+        chunks = build_offer_chunks(extraction_input, 1000, 100)
+        chunk_texts = [c.text for c in chunks]
+        routes = router.route(chunk_texts)
+        parsed_output = result_pooler.pool(routes)
         result["offers_parsed"].append(
             {
                 "id": extraction_input.offer.id,
                 "insurer": extraction_input.offer.insurer,
                 "label": extraction_input.offer.label,
-                **parsed_offer.model_dump(),
+                **parsed_output.model_dump(),
             }
         )
-
     return result
 
 
