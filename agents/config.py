@@ -182,7 +182,6 @@ class GeminiTracker:
         model_name: str = "gemini-2.5-flash",
         config: types.GenerateContentConfig | None = None,
     ):
-        print(api_key)
         self.enabled = bool(api_key)
         self.model_name = model_name
         self.config = config
@@ -213,8 +212,6 @@ class GeminiTracker:
                 self.prompt_tokens += getattr(meta, "prompt_token_count", 0) or 0
                 self.completion_tokens += getattr(meta, "candidates_token_count", 0) or 0
                 self.total_tokens += getattr(meta, "total_token_count", 0) or 0
-        print(response)
-
         return response
 
     def get_metrics(self):
