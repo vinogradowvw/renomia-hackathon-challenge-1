@@ -1,0 +1,101 @@
+{
+  "version": 3,
+  "notes": [
+    "Use minimal but diverse few-shot examples.",
+    "Do not copy formatting from text blindly.",
+    "Return null when value is not explicitly found."
+  ],
+  "examples": [
+    {
+      "segment": "odpovednost",
+      "profile": "ideal",
+      "text": "Pojištění odpovědnosti podnikatele. Územní rozsah: Česká republika, Slovensko, Polsko. Limit pojistného plnění: 50 000 000 Kč. Agregovaný roční limit: 100 000 000 Kč. Limit čistých finančních škod: 20 000 000 Kč. Regresní náhrady: 25 000 000 Kč. Nemajetková újma: 15 000 000 Kč. Spoluúčast obecná: 10 000 Kč. Spoluúčast finanční škody: 5 000 Kč. Roční pojistné: 120 280 Kč.",
+      "requested_fields": {
+        "Územní rozsah": "string",
+        "Limit pojistného plnění": "number",
+        "Agregovaný limit": "number",
+        "Limit čistých finančních škod": "number",
+        "Regresní náhrady": "number",
+        "Limit nemajetkové újmy": "number",
+        "Spoluúčast": "number",
+        "Spoluúčast finanční škody": "number",
+        "Roční pojistné": "number",
+        "Asistenční služby": "string"
+      },
+      "example_return": {
+        "Územní rozsah": "Česká republika, Slovensko, Polsko",
+        "Limit pojistného plnění": 50000000,
+        "Agregovaný limit": 100000000,
+        "Limit čistých finančních škod": 20000000,
+        "Regresní náhrady": 25000000,
+        "Limit nemajetkové újmy": 15000000,
+        "Spoluúčast": 10000,
+        "Spoluúčast finanční škody": 5000,
+        "Roční pojistné": 120280,
+        "Asistenční služby": null
+      }
+    },
+    {
+      "segment": "auta",
+      "profile": "real_ocr_noisy",
+      "text": "NABIDKA FLOTILA V4 / interni tisk\n\nSPZ soupis: 5AB 1234, 3CD 8877, 9XY 0001 ...\npojistnik ICO 27123456, datum 12.03.2026\n\nPovinne ruceni ............ limit 150 000 000 Kc\n\nPozn: orientacni hodnota parku 12 400 000 Kc (NENI LIMIT)\nservis: smluvni partneri dle mapy servisu\n\nHavarijni ALLRISK\nspoluucast 5 000 Kc\n\nmarketing: sleva kampan 7%, kod AUTO-2026-Q2\n\nPrima likvidace: ano\nvandalismus ANO\nskla kryti ano; skla spoluucast 1 000 Kc\n\nAsistence rozsah: rozsirena\npocet zasahu: neomezene\n\ntelefon hotline +420 800 123 456\n\nRocni pojistne CELKEM 34 851 Kc\n\nPravni ochrana: neuvedeno\nUrazove pojisteni: neuvedeno",
+      "requested_fields": {
+        "Povinné ručení – limit": "number",
+        "Typ havarijního pojištění": "string",
+        "Spoluúčast havarijní": "number",
+        "Krytí skel": "string",
+        "Spoluúčast skla": "number",
+        "Krytí vandalismu": "string",
+        "Přímá likvidace": "string",
+        "Počet zásahů asistence": "string",
+        "Asistenční služby – rozsah": "string",
+        "Roční pojistné": "number",
+        "Právní ochrana": "string",
+        "Úrazové pojištění": "string"
+      },
+      "example_return": {
+        "Povinné ručení – limit": 150000000,
+        "Typ havarijního pojištění": "Allrisk",
+        "Spoluúčast havarijní": 5000,
+        "Krytí skel": "Ano",
+        "Spoluúčast skla": 1000,
+        "Krytí vandalismu": "Ano",
+        "Přímá likvidace": "Ano",
+        "Počet zásahů asistence": "Neomezeně",
+        "Asistenční služby – rozsah": "Rozšířená asistence",
+        "Roční pojistné": 34851,
+        "Právní ochrana": null,
+        "Úrazové pojištění": null
+      }
+    },
+    {
+      "segment": "lode",
+      "profile": "semantic_normalization",
+      "text": "Tarif rekreacni plavidlo. Odpovednost: vecna skoda 2 mil. Kc, ujma na zivote 10 mil. Kc, jina majetkova ujma 80 tis. Kc. Havarijni castka (rocne) 12,456 Kc. Sleva beze skod 819 Kc. Pred slevou 16 381 Kc. Celkem k uhrade 15 562 Kc. Spoluucast havarijni 10 tis. Kc. Pravni asistence v dokumentu neuvedena. Limit pro financni skody neuveden.",
+      "requested_fields": {
+        "pro škodu na věci": "number",
+        "pro újmu na životě": "number",
+        "pro jinou újmu na jmění": "number",
+        "Havarijní pojištění": "number",
+        "Sleva": "number",
+        "pojistné před slevou": "number",
+        "CELKEM": "number",
+        "Havarijní pojištění - spoluúčast": "number",
+        "Limit pro finanční škody": "number",
+        "Právní asistence": "string"
+      },
+      "example_return": {
+        "pro škodu na věci": 2000000,
+        "pro újmu na životě": 10000000,
+        "pro jinou újmu na jmění": 80000,
+        "Havarijní pojištění": 12456,
+        "Sleva": 819,
+        "pojistné před slevou": 16381,
+        "CELKEM": 15562,
+        "Havarijní pojištění - spoluúčast": 10000,
+        "Limit pro finanční škody": null,
+        "Právní asistence": null
+      }
+    }
+  ]
+}

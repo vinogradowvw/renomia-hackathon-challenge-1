@@ -1,0 +1,605 @@
+{
+  "auta": [
+    {
+      "text": "Povinné ručení – limit: 200/200 mil. Kč\nHavarijní pojištění – limit: nová cena\nSpoluúčast havarijní: 10 000 Kč\nKrytí odcizení: ANO\nKrytí skel: ANO do 20 000 Kč\nPřímá likvidace: ANO\nAsistenční služby – rozsah: Evropa\nPočet zásahů asistence: neomezeně\nRoční pojistné: 18 460 Kč",
+      "extractions": [
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "200/200 mil. Kč",
+          "attributes": {
+            "field_name": "Povinné ručení – limit",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "nová cena",
+          "attributes": {
+            "field_name": "Havarijní pojištění – limit",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "10 000 Kč",
+          "attributes": {
+            "field_name": "Spoluúčast havarijní",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "ANO",
+          "attributes": {
+            "field_name": "Krytí odcizení",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "ANO do 20 000 Kč",
+          "attributes": {
+            "field_name": "Krytí skel",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "ANO",
+          "attributes": {
+            "field_name": "Přímá likvidace",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "Evropa",
+          "attributes": {
+            "field_name": "Asistenční služby – rozsah",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "neomezeně",
+          "attributes": {
+            "field_name": "Počet zásahů asistence",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "18 460 Kč",
+          "attributes": {
+            "field_name": "Roční pojistné",
+            "value_type": "number"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Roční pojistné: 11 980 Kč\nPovinné ručení – limit: 70/70 mil. Kč\nTyp havarijního pojištění: se spoluúčastí\nKrytí vandalismu: ANO\nKrytí střetu se zvěří: ANO\nPrávní ochrana: NE\nRozsah servisu: smluvní servis\nÚrazové pojištění: 200 000 Kč na sedadlo",
+      "extractions": [
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "11 980 Kč",
+          "attributes": {
+            "field_name": "Roční pojistné",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "70/70 mil. Kč",
+          "attributes": {
+            "field_name": "Povinné ručení – limit",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "se spoluúčastí",
+          "attributes": {
+            "field_name": "Typ havarijního pojištění",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "ANO",
+          "attributes": {
+            "field_name": "Krytí vandalismu",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "ANO",
+          "attributes": {
+            "field_name": "Krytí střetu se zvěří",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "NE",
+          "attributes": {
+            "field_name": "Právní ochrana",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "smluvní servis",
+          "attributes": {
+            "field_name": "Rozsah servisu",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "200 000 Kč na sedadlo",
+          "attributes": {
+            "field_name": "Úrazové pojištění",
+            "value_type": "string"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Havarijní pojištění – limit: obvyklá cena\nSpoluúčast skla: 1 000 Kč\nKrytí živelních rizik: ANO\nPřímá likvidace: NE\nAsistenční služby – rozsah: ČR + zahraničí\nRozsah servisu: autorizovaný i neautorizovaný servis\nPočet zásahů asistence: 6 ročně\nRoční pojistné: 26 340 Kč",
+      "extractions": [
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "obvyklá cena",
+          "attributes": {
+            "field_name": "Havarijní pojištění – limit",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "1 000 Kč",
+          "attributes": {
+            "field_name": "Spoluúčast skla",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "ANO",
+          "attributes": {
+            "field_name": "Krytí živelních rizik",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "NE",
+          "attributes": {
+            "field_name": "Přímá likvidace",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "ČR + zahraničí",
+          "attributes": {
+            "field_name": "Asistenční služby – rozsah",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "autorizovaný i neautorizovaný servis",
+          "attributes": {
+            "field_name": "Rozsah servisu",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "6 ročně",
+          "attributes": {
+            "field_name": "Počet zásahů asistence",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "26 340 Kč",
+          "attributes": {
+            "field_name": "Roční pojistné",
+            "value_type": "number"
+          }
+        }
+      ]
+    }
+  ],
+  "lode": [
+    {
+      "text": "Havarijní pojištění: 415 €\nHavarijní pojištění - spoluúčast: 350 €\nPojištění odpovědnosti za škodu: 9 mil. €\npro škodu na věci: 4 000 000 Kč\npro újmu na životě: 12 000 000 Kč\npro jinou újmu na jmění: 1 500 000 Kč\nCELKEM: 612 €",
+      "extractions": [
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "415 €",
+          "attributes": {
+            "field_name": "Havarijní pojištění",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "350 €",
+          "attributes": {
+            "field_name": "Havarijní pojištění - spoluúčast",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "9 mil. €",
+          "attributes": {
+            "field_name": "Pojištění odpovědnosti za škodu",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "4 000 000 Kč",
+          "attributes": {
+            "field_name": "pro škodu na věci",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "12 000 000 Kč",
+          "attributes": {
+            "field_name": "pro újmu na životě",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "1 500 000 Kč",
+          "attributes": {
+            "field_name": "pro jinou újmu na jmění",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "612 €",
+          "attributes": {
+            "field_name": "CELKEM",
+            "value_type": "number"
+          }
+        }
+      ]
+    },
+    {
+      "text": "pojistné před slevou: 1 280 €\nSleva: 12 %\nRoční pojistné: 96 €\nLimit pro finanční škody: 3 000 000 Kč\nMaximální výše odškodného za újmu na zdraví: 10 000 000 Kč\nPojištěná částka v případě úmrtí: 300 000 Kč\nPojistná částka v případě trvalého invalidního stavu: 750 000 Kč\nCELKEM: 1 126,40 €",
+      "extractions": [
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "1 280 €",
+          "attributes": {
+            "field_name": "pojistné před slevou",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "12 %",
+          "attributes": {
+            "field_name": "Sleva",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "96 €",
+          "attributes": {
+            "field_name": "Roční pojistné:",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "3 000 000 Kč",
+          "attributes": {
+            "field_name": "Limit pro finanční škody",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "10 000 000 Kč",
+          "attributes": {
+            "field_name": "Maximální výše odškodného za újmu na zdraví",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "300 000 Kč",
+          "attributes": {
+            "field_name": "Pojištěná částka v případě úmrtí",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "750 000 Kč",
+          "attributes": {
+            "field_name": "Pojistná částka v případě trvalého invalidního stavu",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "1 126,40 €",
+          "attributes": {
+            "field_name": "CELKEM",
+            "value_type": "number"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Havarijní pojištění: 19 800 Kč\nHavarijní pojištění - spoluúčast: 15 000 Kč\nroční pojistné: 6 200 Kč\nKombinovaný jednotný limit pro úrazové pojištění a škody na majetku: 8 000 000 Kč\nPojištění odpovědnosti za škodu: 5 000 000 Kč\nCELKEM: 26 000 Kč",
+      "extractions": [
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "19 800 Kč",
+          "attributes": {
+            "field_name": "Havarijní pojištění",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "15 000 Kč",
+          "attributes": {
+            "field_name": "Havarijní pojištění - spoluúčast",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "6 200 Kč",
+          "attributes": {
+            "field_name": "roční pojistné",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "8 000 000 Kč",
+          "attributes": {
+            "field_name": "Kombinovaný jednotný limit pro úrazové pojištění a škody na majetku",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "5 000 000 Kč",
+          "attributes": {
+            "field_name": "Pojištění odpovědnosti za škodu",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "26 000 Kč",
+          "attributes": {
+            "field_name": "CELKEM",
+            "value_type": "number"
+          }
+        }
+      ]
+    }
+  ],
+  "odpovednost": [
+    {
+      "text": "Limit pojistného plnění: 80 000 000 Kč\nSpoluúčast: 15 000 Kč\nRoční pojistné: 142 500 Kč\nÚzemní rozsah: Česká republika, Slovensko, Rakousko\nRegres pojišťoven limit I: 10 000 000 Kč\nRegres pojišťoven spoluúčast I: 1 000 Kč\nLimit čistých finančních škod: 12 000 000 Kč\nVyloučené státy/sankce: USA, Kanada",
+      "extractions": [
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "80 000 000 Kč",
+          "attributes": {
+            "field_name": "Limit pojistného plnění",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "15 000 Kč",
+          "attributes": {
+            "field_name": "Spoluúčast",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "142 500 Kč",
+          "attributes": {
+            "field_name": "Roční pojistné",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "Česká republika, Slovensko, Rakousko",
+          "attributes": {
+            "field_name": "Územní rozsah",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "10 000 000 Kč",
+          "attributes": {
+            "field_name": "Regres pojišťoven limit I",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "1 000 Kč",
+          "attributes": {
+            "field_name": "Regres pojišťoven spoluúčast I",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "12 000 000 Kč",
+          "attributes": {
+            "field_name": "Limit čistých finančních škod",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "USA, Kanada",
+          "attributes": {
+            "field_name": "Vyloučené státy/sankce",
+            "value_type": "string"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Obecná odpovědnost limit I: 50 000 000 Kč\nObecná odpovědnost spoluúčast I: 10 000 Kč\nVěci převzaté/užívané limit I: 3 000 000 Kč\nVěci převzaté/užívané spoluúčast I: 5 000 Kč\nVyloučené činnosti: vývoj malware, provoz datových center třetích stran\nVýluky na kybernetická rizika: nevztahuje se na ransomware a ztrátu dat\nZpůsob stanovení prémia: pevná roční sazba podle obratu do 120 mil. Kč",
+      "extractions": [
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "50 000 000 Kč",
+          "attributes": {
+            "field_name": "Obecná odpovědnost limit I",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "10 000 Kč",
+          "attributes": {
+            "field_name": "Obecná odpovědnost spoluúčast I",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "3 000 000 Kč",
+          "attributes": {
+            "field_name": "Věci převzaté/užívané limit I",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "5 000 Kč",
+          "attributes": {
+            "field_name": "Věci převzaté/užívané spoluúčast I",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "vývoj malware, provoz datových center třetích stran",
+          "attributes": {
+            "field_name": "Vyloučené činnosti",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "nevztahuje se na ransomware a ztrátu dat",
+          "attributes": {
+            "field_name": "Výluky na kybernetická rizika",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "pevná roční sazba podle obratu do 120 mil. Kč",
+          "attributes": {
+            "field_name": "Způsob stanovení prémia",
+            "value_type": "string"
+          }
+        }
+      ]
+    },
+    {
+      "text": "Osobnostní újma limit I: 8 000 000 Kč\nOsobnostní újma spoluúčast I: 2 000 Kč\nOsoby ve výkonu trestu: zahrnuto do limitu 4 000 000 Kč\nVýkon trestu škody limit I: 4 000 000 Kč\nVýkon trestu škody spoluúčast I: 20 000 Kč\nAsistenční služby: právní asistence 24/7 do 200 000 Kč\nKrytí subdodavatel/subdodávky: ano, pouze smluvně evidovaní subdodavatelé\nKrytí vadného výrobku: sjednáno do 6 000 000 Kč",
+      "extractions": [
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "8 000 000 Kč",
+          "attributes": {
+            "field_name": "Osobnostní újma limit I",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "2 000 Kč",
+          "attributes": {
+            "field_name": "Osobnostní újma spoluúčast I",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "zahrnuto do limitu 4 000 000 Kč",
+          "attributes": {
+            "field_name": "Osoby ve výkonu trestu",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "4 000 000 Kč",
+          "attributes": {
+            "field_name": "Výkon trestu škody limit I",
+            "value_type": "number"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "20 000 Kč",
+          "attributes": {
+            "field_name": "Výkon trestu škody spoluúčast I",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "právní asistence 24/7 do 200 000 Kč",
+          "attributes": {
+            "field_name": "Asistenční služby",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "ano, pouze smluvně evidovaní subdodavatelé",
+          "attributes": {
+            "field_name": "Krytí subdodavatel/subdodávky",
+            "value_type": "string"
+          }
+        },
+        {
+          "extraction_class": "insurance_field",
+          "extraction_text": "sjednáno do 6 000 000 Kč",
+          "attributes": {
+            "field_name": "Krytí vadného výrobku",
+            "value_type": "string"
+          }
+        }
+      ]
+    }
+  ]
+}
