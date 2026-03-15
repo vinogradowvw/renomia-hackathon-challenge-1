@@ -14,6 +14,7 @@ dags/managers/scripts/manually_mapped.xlsx
 *.xlsx
 *logs/
 dags/managers/
+/test
 
 doc_embeddings/
 query_embeddings/
