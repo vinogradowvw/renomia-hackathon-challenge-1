@@ -491,6 +491,7 @@ async def process_offer_async(
 def build_ranking_result(
     offers_parsed: list[dict[str, Any]],
     sort_params: list[dict[str, Any]],
+    null_threshold: float = 0.67,
 ) -> tuple[list[str], str | None]:
     try:
         import pandas as pd
@@ -507,6 +508,7 @@ def build_ranking_result(
     ranking = Ranking().rank(
         df=df,
         sort_params=sort_params,
+        null_threshold=null_threshold,
     )
     best_offer_id = ranking[0] if ranking else None
     return ranking, best_offer_id
@@ -520,6 +522,7 @@ async def pipeline(
     model_id: str = MODEL_ID,
     include_debug_payload: bool = True,
     use_cache: bool = True,
+    null_threshold: float = 0.67,
 ) -> dict[str, Any]:
     offers = input_data.get("offers", [])
     segment = input_data.get("segment")
@@ -631,6 +634,7 @@ async def pipeline(
     ranking, best_offer_id = build_ranking_result(
         offers_parsed=offers_parsed,
         sort_params=sort_info.sort_params,
+        null_threshold=null_threshold,
     )
     formatted_offers_parsed = [
         build_output_offer_dict(
@@ -689,6 +693,7 @@ def run_pipeline_sync(
     model_id: str = MODEL_ID,
     include_debug_payload: bool = True,
     use_cache: bool = True,
+    null_threshold: float = 0.67,
 ) -> dict[str, Any]:
     return asyncio.run(
         pipeline(
@@ -699,5 +704,6 @@ def run_pipeline_sync(
             model_id=model_id,
             include_debug_payload=include_debug_payload,
             use_cache=use_cache,
+            null_threshold=null_threshold,
         )
     )

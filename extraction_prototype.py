@@ -104,7 +104,6 @@ DEFAULT_NUMERICISH_FIELDS = {
 NUMBER_TYPE_ALIASES = {"number", "int", "integer", "float", "numeric", "decimal"}
 NUMBER_TOKEN_RE = re.compile(r"\d[\d\s.,\xa0]*")
 
-
 def _json_pretty(payload: Any) -> str:
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
@@ -778,6 +777,7 @@ async def get_sort_params_async(
 def build_ranking_result(
     offers_parsed: list[dict[str, Any]],
     sort_params: list[dict[str, Any]],
+    null_threshold: float = 0.67,
 ) -> tuple[list[str], str | None]:
     try:
         import pandas as pd
@@ -794,6 +794,7 @@ def build_ranking_result(
     ranking = Ranking().rank(
         df=df,
         sort_params=sort_params,
+        null_threshold=null_threshold,
     )
     best_offer_id = ranking[0] if ranking else None
     return ranking, best_offer_id
@@ -806,6 +807,7 @@ async def parse_and_rerank(
     concurrency: int = 2,
     model_id: str = MODEL_ID,
     include_debug_payload: bool = True,
+    null_threshold: float = 0.67,
 ) -> dict[str, Any]:
     offers = input_data.get("offers", [])
     field_types = input_data.get("field_types") or DEFAULT_FIELD_TYPES
@@ -852,6 +854,7 @@ async def parse_and_rerank(
     ranking, best_offer_id = build_ranking_result(
         offers_parsed=ranking_ready_offers,
         sort_params=sort_info.sort_params,
+        null_threshold=null_threshold,
     )
 
     offers_parsed = [

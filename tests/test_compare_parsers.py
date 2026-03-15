@@ -1,15 +1,33 @@
 from __future__ import annotations
 
 import json
-import os
 import time
 import unittest
 import unicodedata
 from statistics import mean
 from typing import Any
 
-from extraction_prototype import parse_and_rerank
-from gemini_extraction_judge import pipeline as judge_pipeline
+from extraction_prototype import (
+    build_ranking_result as prototype_build_ranking_result,
+    parse_and_rerank,
+)
+from gemini_extraction_judge import (
+    build_ranking_result as judge_build_ranking_result,
+    pipeline as judge_pipeline,
+)
+
+
+API_KEY = "AIzaSyC1HUpd8BsOE4qvm_KbY-oThNB4F4jerzI"
+TRAINING_DB_CONFIG = {
+    "host": "35.234.124.49",
+    "port": 5432,
+    "user": "hackathon_reader",
+    "password": "ReadOnly2025hack",
+    "dbname": "hackathon_training",
+}
+TRAINING_SEGMENT = None
+TRAINING_CASE_LIMIT = 0
+NULL_THRESHOLDS = [0.0, 0.4, 0.8, 1.0]
 
 
 def _normalize_segment_key(value: str) -> str:
@@ -21,12 +39,11 @@ def _normalize_segment_key(value: str) -> str:
 
 
 def _require_api_key() -> str:
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
-    if not api_key:
+    if not API_KEY:
         raise unittest.SkipTest(
-            "Set GEMINI_API_KEY or GOOGLE_API_KEY to run the parser comparison test."
+            "API_KEY constant is empty in tests/test_compare_parsers.py."
         )
-    return api_key
+    return API_KEY
 
 
 def _load_training_data() -> list[dict[str, Any]]:
@@ -35,24 +52,7 @@ def _load_training_data() -> list[dict[str, Any]]:
     except ImportError as exc:
         raise unittest.SkipTest("psycopg2 is required for this integration test.") from exc
 
-    dsn = os.getenv("TRAINING_DB_DSN")
-    if dsn:
-        conn = psycopg2.connect(dsn)
-    else:
-        required_env = {
-            "host": os.getenv("TRAINING_DB_HOST"),
-            "port": os.getenv("TRAINING_DB_PORT"),
-            "user": os.getenv("TRAINING_DB_USER"),
-            "password": os.getenv("TRAINING_DB_PASSWORD"),
-            "dbname": os.getenv("TRAINING_DB_NAME"),
-        }
-        missing = [name for name, value in required_env.items() if not value]
-        if missing:
-            raise unittest.SkipTest(
-                "Set TRAINING_DB_DSN or TRAINING_DB_HOST/TRAINING_DB_PORT/"
-                "TRAINING_DB_USER/TRAINING_DB_PASSWORD/TRAINING_DB_NAME to run this test."
-            )
-        conn = psycopg2.connect(**required_env)
+    conn = psycopg2.connect(**TRAINING_DB_CONFIG)
 
     with conn:
         with conn.cursor() as cur:
@@ -69,18 +69,16 @@ def _load_training_data() -> list[dict[str, Any]]:
         for input_data, expected_output in all_rows
     ]
 
-    requested_segment = os.getenv("TRAINING_SEGMENT")
-    if requested_segment:
-        normalized_requested_segment = _normalize_segment_key(requested_segment)
+    if TRAINING_SEGMENT:
+        normalized_requested_segment = _normalize_segment_key(TRAINING_SEGMENT)
         cases = [
             case
             for case in cases
             if _normalize_segment_key(case["input"].get("segment", "")) == normalized_requested_segment
         ]
 
-    case_limit = int(os.getenv("TRAINING_CASE_LIMIT", "1"))
-    if case_limit > 0:
-        cases = cases[:case_limit]
+    if TRAINING_CASE_LIMIT > 0:
+        cases = cases[:TRAINING_CASE_LIMIT]
 
     if not cases:
         raise unittest.SkipTest("No training cases matched the current filters.")
@@ -146,6 +144,28 @@ def _compute_average_field_distance(
     return mean(distances) if distances else 0.0
 
 
+def _evaluate_reranking(
+    output: dict[str, Any],
+    expected_output: dict[str, Any],
+    build_ranking_result_fn,
+    null_threshold: float,
+) -> dict[str, Any]:
+    ranking, best_offer_id = build_ranking_result_fn(
+        offers_parsed=output.get("offers_parsed", []),
+        sort_params=output.get("sort_params", []),
+        null_threshold=null_threshold,
+    )
+    expected_ranking = expected_output.get("ranking")
+    expected_best_offer_id = expected_output.get("best_offer_id")
+    return {
+        "null_threshold": null_threshold,
+        "ranking": ranking,
+        "best_offer_id": best_offer_id,
+        "ranking_exact_match": ranking == expected_ranking,
+        "best_offer_exact_match": best_offer_id == expected_best_offer_id,
+    }
+
+
 class CompareParsersIntegrationTest(unittest.IsolatedAsyncioTestCase):
     async def test_compare_gemini_extraction_judge_vs_extraction_prototype(self):
         api_key = _require_api_key()
@@ -153,18 +173,29 @@ class CompareParsersIntegrationTest(unittest.IsolatedAsyncioTestCase):
 
         report: dict[str, Any] = {
             "case_count": len(cases),
+            "null_thresholds": NULL_THRESHOLDS,
             "cases": [],
             "extraction_prototype": {
                 "avg_field_distance": None,
                 "total_parse_seconds": 0.0,
-                "ranking_exact_matches": 0,
-                "best_offer_exact_matches": 0,
+                "thresholds": {
+                    str(null_threshold): {
+                        "ranking_exact_matches": 0,
+                        "best_offer_exact_matches": 0,
+                    }
+                    for null_threshold in NULL_THRESHOLDS
+                },
             },
             "gemini_extraction_judge": {
                 "avg_field_distance": None,
                 "total_parse_seconds": 0.0,
-                "ranking_exact_matches": 0,
-                "best_offer_exact_matches": 0,
+                "thresholds": {
+                    str(null_threshold): {
+                        "ranking_exact_matches": 0,
+                        "best_offer_exact_matches": 0,
+                    }
+                    for null_threshold in NULL_THRESHOLDS
+                },
             },
         }
 
@@ -181,6 +212,7 @@ class CompareParsersIntegrationTest(unittest.IsolatedAsyncioTestCase):
                 input_data=input_data,
                 api_key=api_key,
                 include_debug_payload=False,
+                null_threshold=0.67,
             )
             prototype_elapsed = time.perf_counter() - prototype_started_at
 
@@ -190,6 +222,7 @@ class CompareParsersIntegrationTest(unittest.IsolatedAsyncioTestCase):
                 api_key=api_key,
                 include_debug_payload=False,
                 use_cache=False,
+                null_threshold=0.67,
             )
             judge_elapsed = time.perf_counter() - judge_started_at
 
@@ -213,15 +246,42 @@ class CompareParsersIntegrationTest(unittest.IsolatedAsyncioTestCase):
             report["extraction_prototype"]["total_parse_seconds"] += prototype_elapsed
             report["gemini_extraction_judge"]["total_parse_seconds"] += judge_elapsed
 
-            if prototype_output.get("ranking") == expected_output.get("ranking"):
-                report["extraction_prototype"]["ranking_exact_matches"] += 1
-            if judge_output.get("ranking") == expected_output.get("ranking"):
-                report["gemini_extraction_judge"]["ranking_exact_matches"] += 1
+            prototype_threshold_results = []
+            judge_threshold_results = []
+            for null_threshold in NULL_THRESHOLDS:
+                prototype_threshold_result = _evaluate_reranking(
+                    output=prototype_output,
+                    expected_output=expected_output,
+                    build_ranking_result_fn=prototype_build_ranking_result,
+                    null_threshold=null_threshold,
+                )
+                judge_threshold_result = _evaluate_reranking(
+                    output=judge_output,
+                    expected_output=expected_output,
+                    build_ranking_result_fn=judge_build_ranking_result,
+                    null_threshold=null_threshold,
+                )
 
-            if prototype_output.get("best_offer_id") == expected_output.get("best_offer_id"):
-                report["extraction_prototype"]["best_offer_exact_matches"] += 1
-            if judge_output.get("best_offer_id") == expected_output.get("best_offer_id"):
-                report["gemini_extraction_judge"]["best_offer_exact_matches"] += 1
+                prototype_threshold_results.append(prototype_threshold_result)
+                judge_threshold_results.append(judge_threshold_result)
+
+                if prototype_threshold_result["ranking_exact_match"]:
+                    report["extraction_prototype"]["thresholds"][str(null_threshold)][
+                        "ranking_exact_matches"
+                    ] += 1
+                if prototype_threshold_result["best_offer_exact_match"]:
+                    report["extraction_prototype"]["thresholds"][str(null_threshold)][
+                        "best_offer_exact_matches"
+                    ] += 1
+
+                if judge_threshold_result["ranking_exact_match"]:
+                    report["gemini_extraction_judge"]["thresholds"][str(null_threshold)][
+                        "ranking_exact_matches"
+                    ] += 1
+                if judge_threshold_result["best_offer_exact_match"]:
+                    report["gemini_extraction_judge"]["thresholds"][str(null_threshold)][
+                        "best_offer_exact_matches"
+                    ] += 1
 
             report["cases"].append(
                 {
@@ -232,14 +292,12 @@ class CompareParsersIntegrationTest(unittest.IsolatedAsyncioTestCase):
                     "extraction_prototype": {
                         "avg_field_distance": prototype_distance,
                         "parse_seconds": prototype_elapsed,
-                        "ranking": prototype_output.get("ranking"),
-                        "best_offer_id": prototype_output.get("best_offer_id"),
+                        "threshold_results": prototype_threshold_results,
                     },
                     "gemini_extraction_judge": {
                         "avg_field_distance": judge_distance,
                         "parse_seconds": judge_elapsed,
-                        "ranking": judge_output.get("ranking"),
-                        "best_offer_id": judge_output.get("best_offer_id"),
+                        "threshold_results": judge_threshold_results,
                     },
                 }
             )
