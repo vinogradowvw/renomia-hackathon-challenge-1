@@ -125,11 +125,17 @@ async def solve(payload: dict):
     if not GEMINI_API_KEY:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured")
 
-    return await parse_and_rerank(
+    parsed_result = await parse_and_rerank(
         input_data=payload,
         api_key=GEMINI_API_KEY,
-        include_debug_payload=True,
+        include_debug_payload=False,
     )
+
+    return {
+        "offers_parsed": parsed_result.get("offers_parsed", []),
+        "ranking": parsed_result.get("ranking", []),
+        "best_offer_id": parsed_result.get("best_offer_id"),
+    }
 
 
 if __name__ == "__main__":
