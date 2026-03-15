@@ -7,23 +7,20 @@ Output: Parsed parameters per offer, ranking, best offer identification
 """
 
 import os
-import threading
-import time
-from agents.result_pooler import ResultPooler
-from agents.config import ExtractionInput, OfferInput, gemini
-from agents.extraction import build_offer_chunks
+from agents.config import gemini
 
 import psycopg2
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import uvicorn
 
-from agents.router import Router
+from extraction_prototype import parse_and_rerank
 
 app = FastAPI(title="Challenge 1: Insurance Offer Comparison")
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL", "postgresql://hackathon:hackathon@localhost:5432/hackathon"
 )
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 def get_db():
     return psycopg2.connect(DATABASE_URL)
@@ -66,7 +63,7 @@ def reset_metrics():
 
 
 @app.post("/solve")
-def solve(payload: dict):
+async def solve(payload: dict):
     """
     Compare insurance offers and identify the best option.
 
@@ -125,37 +122,14 @@ def solve(payload: dict):
         "best_offer_id": "csob_1"
     }
     """
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY is not configured")
 
-    offers = payload.get("offers", [])
-    segment = payload.get("segment", "")
-
-    result = {
-        "offers_parsed": [],
-        "ranking": [],
-        "best_offer_id": None,
-    }
-
-    router = Router()
-    result_pooler = ResultPooler()
-
-    for offer_payload in offers:
-        extraction_input = ExtractionInput(
-            offer=OfferInput.model_validate(offer_payload),
-            segment=segment,
-        )
-        chunks = build_offer_chunks(extraction_input, 1000, 100)
-        chunk_texts = [c.text for c in chunks]
-        routes = router.route(chunk_texts)
-        parsed_output = result_pooler.pool(routes)
-        result["offers_parsed"].append(
-            {
-                "id": extraction_input.offer.id,
-                "insurer": extraction_input.offer.insurer,
-                "label": extraction_input.offer.label,
-                **parsed_output.model_dump(),
-            }
-        )
-    return result
+    return await parse_and_rerank(
+        input_data=payload,
+        api_key=GEMINI_API_KEY,
+        include_debug_payload=True,
+    )
 
 
 if __name__ == "__main__":

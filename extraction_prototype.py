@@ -6,11 +6,17 @@ import mimetypes
 import re
 from types import SimpleNamespace
 from typing import Any
+from pathlib import Path
+import unicodedata
 
 import httpx
 from google import genai
 from google.genai import types
 from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponential
+
+from caching.CacheRepo import CacheRepo
+from caching.hashing import Hashing
+from models import Cache, transaction
 
 
 MODEL_ID = "gemini-2.5-flash"
@@ -18,7 +24,6 @@ MODEL_ID = "gemini-2.5-flash"
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Дефолтный набор полей оставляем для быстрых локальных запусков.
 DEFAULT_FIELD_TYPES = {
     "Spoluúčast": "string",
     "Smluvní pokuty": "string",
@@ -130,6 +135,82 @@ def _normalize_example(example: Any) -> dict[str, Any]:
         "example_return": example_return,
     }
 
+DEFAULT_EXAMPLES_PATH = Path(__file__).with_name("examples.json")
+
+
+def build_offer_ocr_cache_key(offer: dict[str, Any]) -> str:
+    documents = offer.get("documents", []) or []
+    combined_ocr_text = "\n".join(
+        (doc.get("ocr_text") or "")
+        for doc in documents
+    )
+    return f"offer_ocr:{Hashing.sha256(combined_ocr_text)}"
+
+def build_extraction_few_shot_examples(
+    static_examples: list[dict[str, Any]],
+    requested_fields: dict[str, str],
+) -> list[dict[str, Any]]:
+    few_shot_examples: list[dict[str, Any]] = []
+
+    for item in static_examples:
+        requested_subset = {
+            field_name: requested_fields[field_name]
+            for field_name in item.get("requested_fields", {})
+            if field_name in requested_fields
+        }
+        example_return_subset = {
+            field_name: value
+            for field_name, value in item.get("example_return", {}).items()
+            if field_name in requested_subset
+        }
+
+        if not requested_subset:
+            continue
+
+        few_shot_examples.append(
+            {
+                "text": item.get("text", ""),
+                "requested_fields": requested_subset,
+                "example_return": example_return_subset,
+            }
+        )
+
+    return few_shot_examples
+
+def _normalize_segment_key(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    without_diacritics = "".join(
+        char for char in normalized if not unicodedata.combining(char)
+    )
+    return without_diacritics.casefold()
+
+def load_static_examples(
+    path: str | Path,
+    segment: str,
+) -> list[dict[str, Any]]:
+    raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    normalized_segment = _normalize_segment_key(segment)
+
+    matched_examples = [
+        item
+        for item in raw.get("examples", [])
+        if _normalize_segment_key(item.get("segment", "")) == normalized_segment
+    ]
+
+    if not matched_examples:
+        available_segments = sorted(
+            {
+                item.get("segment", "")
+                for item in raw.get("examples", [])
+                if item.get("segment")
+            }
+        )
+        raise KeyError(
+            f"Segment '{segment}' was not found in examples.json. "
+            f"Available segments: {', '.join(available_segments)}"
+        )
+
+    return matched_examples
 
 def infer_numericish_fields(requested_fields: dict[str, str]) -> set[str]:
     numericish_fields = set()
@@ -813,7 +894,7 @@ async def parse_and_rerank(
     field_types = input_data.get("field_types") or DEFAULT_FIELD_TYPES
     fields_to_extract = input_data.get("fields_to_extract")
     segment = input_data.get("segment")
-
+    
     requested_fields = (
         {
             field_name: field_types[field_name]
@@ -821,6 +902,15 @@ async def parse_and_rerank(
         }
         if fields_to_extract
         else dict(field_types)
+    )
+    
+    static_examples = static_examples = load_static_examples(
+        path=DEFAULT_EXAMPLES_PATH,
+        segment=segment,
+    )
+    few_shot_examples = build_extraction_few_shot_examples(
+        static_examples=static_examples,
+        requested_fields=requested_fields,
     )
 
     extraction_results = await extract_offers_documents_async(
@@ -1000,13 +1090,79 @@ async def extract_offers_documents_async(
 
     async def run_one(single_offer):
         async with semaphore:
-            return await extract_offer_async(
+            cache_key = build_offer_ocr_cache_key(single_offer)
+
+            try:
+                with transaction():
+                    cache_entry = CacheRepo.get_instance().get_by_key(cache_key)
+            except Exception as exc:
+                logger.warning(
+                    "Cache read failed for offer_id=%s key=%s: %s",
+                    single_offer.get("id"),
+                    cache_key,
+                    str(exc),
+                )
+                cache_entry = None
+
+            if cache_entry is not None:
+                cached_payload = cache_entry.value if isinstance(cache_entry.value, dict) else {}
+                cached_parsed_json = (
+                    cached_payload.get("parsed_json")
+                    if isinstance(cached_payload.get("parsed_json"), dict)
+                    else cached_payload
+                )
+
+                parsed_json = coerce_parsed_json(cached_parsed_json, requested_fields)
+                parsed_json = normalize_number_typed_fields(parsed_json, requested_fields)
+                parsed_json = order_parsed_json(parsed_json, requested_fields)
+                extractions = make_extractions_from_json(
+                    parsed_json=parsed_json,
+                    requested_fields=requested_fields,
+                    source_documents=[],
+                )
+
+                logger.info(
+                    "Cache hit for offer_id=%s key=%s",
+                    single_offer.get("id"),
+                    cache_key,
+                )
+                return SimpleNamespace(
+                    parsed_json=parsed_json,
+                    extractions=extractions,
+                    prompt="",
+                    combined_ocr_text="",
+                    source_documents=[],
+                    attached_pdf_files=[],
+                    estimated_input_tokens=0,
+                    usage=usage_to_dict(None),
+                    raw_response_text=_json_pretty(parsed_json),
+                )
+
+            extracted = await extract_offer_async(
                 client=client,
                 offer=single_offer,
                 requested_fields=requested_fields,
                 few_shot_examples=few_shot_examples,
                 model_id=model_id,
             )
+
+            try:
+                with transaction():
+                    CacheRepo.get_instance().add(
+                        Cache(
+                            key=cache_key,
+                            value={"parsed_json": extracted.parsed_json},
+                        )
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "Cache write failed for offer_id=%s key=%s: %s",
+                    single_offer.get("id"),
+                    cache_key,
+                    str(exc),
+                )
+
+            return extracted
 
     try:
         raw_results = await asyncio.gather(
